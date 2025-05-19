@@ -1,16 +1,16 @@
 <template>
   <div class="near-wifi">
-    <div class="tip" @click="store.showNewLearnImgPoster = true">
+    <div class="tip" @click="showTip = true">
       <div class="text">点击查看任务帮助</div>
       <div class="icon">
         <img src="https://p0.meituan.net/undertake/e49e8d579bb88058eee73d057e512045423.png" alt="任务帮助">
       </div>
     </div>
-    <!-- <NearWifiTip v-if="showTip" @close="showTip = false" /> -->
+    <NearWifiTip v-if="showTip" @close="showTip = false" />
     <div class="header">
       <div class="left">
         <img src="https://p0.meituan.net/undertake/9f2cd3d3f37a0718d4dc6983ab5b7e4f850.png" alt="">
-        <span class="current-position">当前信号范围内可被连接WiFi</span>
+        <span class="current-position">当前位置：{{ props.address }}</span>
       </div>
       <div class="right" @click="refresh">
         刷新任务
@@ -19,7 +19,6 @@
     </div>
     <div class="wifi-list" v-if="model.length">
       <NearWiFiItem v-model="model[index]" v-for="(item, index) in model" @auth="auth(item)" />
-      <div class="btn-moveto" @click="gotoTaskBundleWithMap">走到可扫到任务的区域，获得更多任务 WiFi</div>
     </div>
     <div class="wifi-blank-list" v-else>
       <img class="blank-img" src="https://p0.meituan.net/undertake/e89812400d3bf03c6c8b1a79d6c41ab07638.png" alt="">
@@ -31,7 +30,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { store } from '../../store'
 import NearWifiTip from './NearWifiTip.vue'
 import AuthForm from './AuthForm.vue'
@@ -50,19 +49,6 @@ const authWifi = ref({})
 const showTip = ref(false)
 const showAuthForm = ref(false)
 
-// setTimeout(() => {
-//   auth('test')
-// }, 1000)
-
-// watch 一下 showAuthForm，更改标题 document.title= 正常情况下：“门店淘金” 或 填密码情况下“帮商家提升客流”
-watch(showAuthForm, (newVal) => {
-  if (newVal) {
-    document.title = '帮商家提升客流'
-  } else {
-    document.title = '门店淘金'
-  }
-})
-
 const auth = (item) => {
   authWifi.value = item
   showAuthForm.value = true
@@ -78,11 +64,6 @@ const onAuthSuccess = () => {
     model.value.splice(index, 1)
   }
   showAuthForm.value = false
-}
-
-const gotoTaskBundleWithMap = () => {
-  store.setTaskModuleTab('TaskBundle')
-  store.showMap = true
 }
 </script>
 
@@ -120,8 +101,6 @@ const gotoTaskBundleWithMap = () => {
     }
 
     .current-position {
-      font-size: 30px;
-      font-weight: normal;
       width: 100%;
       @include ellipsis;
     }
@@ -200,16 +179,5 @@ const gotoTaskBundleWithMap = () => {
     font-weight: 500;
     color: #fff;
   }
-}
-
-.btn-moveto{
-  padding: 13px 46px;
-  font-size: 30px;
-  color: #fff;
-  background: #00B300;
-  border-radius: 8px;
-  height: 50px;
-  line-height: 50px;
-  text-align: center;
 }
 </style>

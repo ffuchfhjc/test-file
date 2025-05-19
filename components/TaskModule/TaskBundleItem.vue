@@ -1,34 +1,30 @@
 <template>
-  <div class="card" ref="bundleCard">
-    <div class="header" @click="selectBundle">
+  <div class="card" @click="selectBundle" ref="bundleCard">
+    <div class="header">
       <div class="title">{{ props.bundle.packageName }}</div>
       <div class="reward">
         <span class="reward-label">任务奖励</span>
         <span class="reward-symbol">¥</span>
         <span class="reward-num">{{ formatAmount(props.bundle.packageAmount) }}</span>
-        <img class="arrow" src="https://p0.meituan.net/undertake/e49e8d579bb88058eee73d057e512045423.png" alt="" />
+        <img class="arrow" src="https://p0.meituan.net/undertake/e49e8d579bb88058eee73d057e512045423.png" alt="">
       </div>
     </div>
     <div class="footer">
-      <div class="stat" @click="selectBundle">
-        任务数&thinsp;<span class="stat-num">{{ props.bundle.taskCount }}&nbsp;&nbsp;</span>距离&thinsp;<span class="stat-num">{{
-          formatDistance(props.bundle.distance)
-        }}</span
-        >&nbsp;&nbsp;预计耗时&thinsp;<span class="stat-num">{{ convertToHours(props.bundle.estimateDuration) }}</span>
+      <div class="stat">任务个数&thinsp;<span class="stat-num">{{ props.bundle.taskCount }}</span></div>
+      <div class="stat">距离&thinsp;<span class="stat-num">{{ formatDistance(props.bundle.distance) }}</span></div>
+      <div class="stat">预计耗时&thinsp;<span class="stat-num">{{ convertToHours(props.bundle.estimateDuration) }}</span>
       </div>
-      <div v-if="props.bundle.distance < 50" class="task-btn" @click="onClickTaskBtn">做任务</div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { formatDistance, formatAmount, convertToHours } from "@/utils/transform"
-import { sendMv, sendMc } from "../../lxreport"
-import { ref, onMounted, onUnmounted } from "vue"
-import { store } from "../../store"
+import { formatDistance, formatAmount, convertToHours } from '@/utils/transform'
+import { sendMv, sendMc } from '../../lxreport';
+import { ref, onMounted, onUnmounted } from 'vue'
 
-const props = defineProps(["bundle", "showMap"])
-const emit = defineEmits(["select-bundle"])
+const props = defineProps(['bundle', 'showMap'])
+const emit = defineEmits(['select-bundle'])
 const bundleCard = ref(null)
 const hasReported = ref(false)
 
@@ -37,23 +33,20 @@ let observer = null
 
 onMounted(() => {
   // 创建 Intersection Observer 实例
-  observer = new IntersectionObserver(
-    (entries) => {
-      // 如果元素进入视口且尚未上报
-      if (entries[0].isIntersecting && !hasReported.value) {
-        sendMv("b_lintopt_wheky39c_mv", {
-          page_type: props.showMap ? "map" : "list",
-          bundle_id: props.bundle.packageId,
-        })
-        hasReported.value = true
-        // 一旦上报过，就不再需要观察了
-        observer.disconnect()
-      }
-    },
-    {
-      threshold: 0.5, // 当元素有50%进入视口时触发
+  observer = new IntersectionObserver((entries) => {
+    // 如果元素进入视口且尚未上报
+    if (entries[0].isIntersecting && !hasReported.value) {
+      sendMv('b_lintopt_wheky39c_mv', {
+        page_type: props.showMap ? 'map' : 'list',
+        bundle_id: props.bundle.packageId
+      })
+      hasReported.value = true
+      // 一旦上报过，就不再需要观察了
+      observer.disconnect()
     }
-  )
+  }, {
+    threshold: 0.5 // 当元素有50%进入视口时触发
+  })
 
   // 开始观察元素
   if (bundleCard.value) {
@@ -68,16 +61,12 @@ onUnmounted(() => {
   }
 })
 
-const onClickTaskBtn = () => {
-  store.setTaskModuleTab("NearWiFi")
-}
-
 const selectBundle = () => {
-  sendMc("b_lintopt_wheky39c_mc", {
-    page_type: props.showMap ? "map" : "list",
-    bundle_id: props.bundle.packageId,
+  sendMc('b_lintopt_wheky39c_mc', {
+    page_type: props.showMap ? 'map' : 'list',
+    bundle_id: props.bundle.packageId
   })
-  emit("select-bundle", props.bundle)
+  emit('select-bundle', props.bundle)
 }
 </script>
 
@@ -97,7 +86,7 @@ const selectBundle = () => {
     justify-content: space-between;
     align-items: center;
     padding: 24px;
-    border-bottom: 1px solid #e5e5e5;
+    border-bottom: 1px solid #E5E5E5;
     overflow: hidden;
 
     .title {
@@ -119,12 +108,12 @@ const selectBundle = () => {
       }
 
       &-symbol {
-        color: #ff2d19;
+        color: #FF2D19;
         font-size: 28px;
       }
 
       &-num {
-        color: #ff2d19;
+        color: #FF2D19;
         font-family: MT New Digital Display;
         font-size: 44px;
         font-weight: bold;
@@ -165,14 +154,6 @@ const selectBundle = () => {
         color: rgba(0, 0, 0, 0.9);
       }
     }
-  }
-
-  .task-btn {
-    padding: 13px 20px;
-    font-size: 30px;
-    color: #fff;
-    background: #00b300;
-    border-radius: 8px;
   }
 }
 </style>
