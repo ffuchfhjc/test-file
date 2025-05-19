@@ -1,5 +1,4 @@
-export default function checkInWhiteList() {
-  const userid = window.searchObject.userid
+export default function checkInWhiteList(userid) {
   return [
     122907849, // 陈晨
     4262500947, // 李明

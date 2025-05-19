@@ -11,24 +11,23 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { store } from '../store'
-import logger from '../utils/logger'
 
-const log = logger("BottomNavs")
-
-console.log("--------------------------------_!!!!!!!!!!")
 // const arrShareWhiteUserId = [
 //   891936561, // 明辉
 //   122907849, // 陈晨
 //   4262500947, // 李明
 //   188677989, // 振泽小
 //   879569046, // 李明
+//   4548770299, // 张琦
+//   4733842606,  // 陈晨-new
+//   153438345, // 翟超然
 // ]
 // const canShowShareModule = computed(() => arrShareWhiteUserId.concat(
 //   arrShareWhiteUserId.map(item => String(item))
 // ).includes(store.personalInfo?.userId));
-// log("canShowShareModule.value:", canShowShareModule.value, store.personalInfo?.userId, arrShareWhiteUserId)
 
-const canShowShareModule = ref(true);
+const canShowShareModule = ref(true)
+
 const navItems = computed(() => [
   {
     pageStatus: 'TaskModule',
@@ -41,7 +40,7 @@ const navItems = computed(() => [
     text: '邀请得现金',
     icon: 'https://p1.meituan.net/undertake/82e9eb753453c4d9cc5eb0f216f53b1c1793.png',
     activeIcon: 'https://p0.meituan.net/undertake/79d649e9bf678a920de346e7649399d11785.png'
-  }] : []),
+  }]: []),
   {
     pageStatus: 'PersonalCenter',
     text: '提现',

@@ -99,9 +99,9 @@ function getLocation() {
       promiseTimeout: 2000,
       cacheExpireTime: 2*60*1000
     }, {
-      // 代表如果 5 秒内没有获取到， 1小时内的缓存，可以使用
-      promiseTimeout: 5000,
-      cacheExpireTime: 60*60*1000
+      // 代表如果 5 秒内没有获取到， 5分钟内的缓存，可以使用
+      promiseTimeout: 3500,
+      cacheExpireTime: 3.5*60*1000
     },{
       // 代表如果 4 秒内没有获取到， 尝试重新获取
       promiseTimeout: 10000,
@@ -127,38 +127,38 @@ function getLocation() {
         })
         wx.miniProgram.reLaunch({ url: mpUrl })
 
-        // 尝试重新获取一次
-        return new Promise((resolve) => {
-          bridge.callMpBatch([
-            {
-              apiHandler: "callMpAsync",
-              apiName: "getLocation",
-              apiParams: {
-                type: "wgs84",
-                isHighAccuracy: true,
-                success: function (res) {
-                  resolve(res)
-                  console.log("getLocation-success", res)
-                },
-                fail: function (res) {
-                  console.log("getLocation-fail", res)
-                },
-              },
-            },
-            { // 顺便获取wifi列表，结果从onGetWifiList获取
-              apiHandler: "callMpAsync",
-              apiName: "getWifiList",
-              apiParams: {
-                success: res => {
-                  console.log("getWifiList-success", res)
-                },
-                fail: res => {
-                  console.log("getWifiList-fail", res)
-                },
-              },
-            },
-          ])
-        })
+        // // 尝试重新获取一次
+        // return new Promise((resolve) => {
+        //   bridge.callMpBatch([
+        //     {
+        //       apiHandler: "callMpAsync",
+        //       apiName: "getLocation",
+        //       apiParams: {
+        //         type: "wgs84",
+        //         isHighAccuracy: true,
+        //         success: function (res) {
+        //           resolve(res)
+        //           console.log("getLocation-success", res)
+        //         },
+        //         fail: function (res) {
+        //           console.log("getLocation-fail", res)
+        //         },
+        //       },
+        //     },
+        //     { // 顺便获取wifi列表，结果从onGetWifiList获取
+        //       apiHandler: "callMpAsync",
+        //       apiName: "getWifiList",
+        //       apiParams: {
+        //         success: res => {
+        //           console.log("getWifiList-success", res)
+        //         },
+        //         fail: res => {
+        //           console.log("getWifiList-fail", res)
+        //         },
+        //       },
+        //     },
+        //   ])
+        // })
       }, {
         retryTimes: 3,
         delay: 5000,
@@ -189,21 +189,21 @@ console.info("[tmp----------test:] - listenMpAsync('onGetWifiList')")
 listenMpAsync('onGetWifiList') // 提前调用，存入缓存，不然短时间（2分钟）内，可能出现拿不到wifi列表的情况。
 async function getScanWifiList(forceReGetWifiList = true) {
   log('getScanWifiList-callGetWifiList')
-  if(forceReGetWifiList) {
-    await callGetWifiList().then((res) => {
-      log('getScanWifiList-callGetWifiList-then', res)
-    })
-  }
+  // if(forceReGetWifiList) {
+  //   await callGetWifiList().then((res) => {
+  //     log('getScanWifiList-callGetWifiList-then', res)
+  //   })
+  // }
   log('getScanWifiList-cacheWrapper-listenMpAsync-onGetWifiList')
   return cacheWrapper(listenMpAsync('onGetWifiList'), { 
     cacheKey: "onGetWifiList",
     cacheConfig: [{ 
-      // 代表如果 5 秒内没有获取到， 5 分钟内的缓存，可以使用
-      promiseTimeout: 5000,
-      cacheExpireTime: 2*60*1000
+      // 代表如果 2 秒内没有获取到， 2 分钟内的缓存，可以使用
+      promiseTimeout: 2000,
+      cacheExpireTime: 40*1000
     }, {
       // 代表如果 10 秒内没有获取到， 10 分钟内的缓存，可以使用
-      promiseTimeout: 10000,
+      promiseTimeout: 5000,
       defaultValue: {wifiList: []} // TODO: 服务端不让传空？？，临时返回随机做默认值，代表没扫到
     }]
   })

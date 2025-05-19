@@ -91,7 +91,6 @@ const handleWithdraw = () => {
   loadingStatus.value = 'loading'
   log('提现金额:', selectedAmount.value)
   createWithdraw({ amount: selectedAmount.value }).then((res) => {
-    // showLoading.value = false
     log('createWithdraw', res)
     // ststus不为0，代表提现失败
     resultStatus.value = res.data.status ? 'fail' : 'success'

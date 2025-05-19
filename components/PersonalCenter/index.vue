@@ -5,7 +5,7 @@
         <img :src="userAvatar" alt="">
       </div>
       <div class="header-mid">
-        <div class="text">{{ personalInfo.wxUserName || '已登录' }}</div>
+        <div class="text">{{ personalInfo.wxUserName || personalInfo.wxOpenId.slice(-10) }}</div>
       </div>
       <div class="header-right">
         <Withdraw v-if="showWithdraw" @close="showWithdraw = false" />
