@@ -1,1 +1,1 @@
-export * from './wx_mp';
+export * from './mtApp';

@@ -24,9 +24,10 @@
 
 <script setup>
 import { formatDistance, formatAmount } from '@/utils/transform'
-import { openMapApp } from '../../utils/utils'
+import { generateMeituanMapUrl } from '../../utils/utils'
 import { sendMv, sendMc } from '../../lxreport';
 import { ref, onMounted, onUnmounted } from 'vue'
+import { store } from '../../store';
 
 const props = defineProps(['task', 'showMap'])
 const taskItem = ref(null)
@@ -71,11 +72,14 @@ const gotoNavigation = () => {
     task_id: props.task.taskId
   })
   console.log('gotoNavigation')
-  openMapApp({
-    latitude: props.task.poiLat,
-    longitude: props.task.poiLng,
-    destination: props.task.poiName,
+  const url = generateMeituanMapUrl({
+    slat: store.location.lat,
+    slon: store.location.lng,
+    dname: props.task.poiName,
+    dlat: props.task.poiLat,
+    dlon: props.task.poiLng,
   })
+  KNBP.openPage({ url })
 }
 </script>
 

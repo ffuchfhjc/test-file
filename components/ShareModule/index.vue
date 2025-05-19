@@ -36,7 +36,6 @@
         <div class="reward"></div>
       </div>
       <div class="tip" @click="showRule"></div>
-
       <div class="invite-record" @click="showRecordPage=true">
         <div class="txt">
           邀请记录
@@ -60,6 +59,7 @@ import { sendMc, sendMv } from "../../lxreport"
 import { store } from "../../store"
 import createMpUrl from "../../utils/mpUrlCreator"
 import logger from "../../utils/logger"
+import { shareToWx } from "../../utils/utils"
 import ShareRecordPage from "./ShareRecordPage.vue"
 
 const avatarUrl = "https://p0.meituan.net/undertake/0b648ae615e5891e84cbc4a5a3b663501094.png"
@@ -118,12 +118,14 @@ const carouselMockData = [
 ]
 const showRecordPage = ref(false)
 
+
 getShareRecords().then((res) => {
   shareRecord.value = res.data
   if (shareRecord.value.recordDTOList && shareRecord.value.recordDTOList.length > 0) {
     showRecordPage.value = true
   }
   })
+
 const log = logger("ShareModule")
 
 sendMv("b_lintopt_j4thtvx6_mv")
@@ -133,54 +135,43 @@ const showLoading = ref(false)
 const showShareRule = ref(false)
 const shareRecord = ref({})
 
-// 计算属性
-const formattedTotalReward = computed(() => formatAmount(shareRecord.value.totalReward, 2, "0.00"))
-const hasRecords = computed(() => shareRecord.value.recordDTOList && shareRecord.value.recordDTOList.length > 0)
 
-// shareRecord.value = shareData
-// showLoading.value = false
-// emit('init-complete')
-getShareRecords().then((res) => {
-  log("getShareRecords()-callback:", res)
-  emit("init-complete")
-  showLoading.value = false
-  shareRecord.value = res.data
-  // mock begin ===========>
-  if (window.searchObject.isGzzTest) {
-    shareRecord.value.canInvite = true
-  }
-  // mock end ===========>
-  console.log("shareRecord.value", shareRecord.value)
-})
+
 const share = () => {
-  sendMc('b_lintopt_j4thtvx6_mc', { title: '分享按钮' })
-  log('share(): ', store)
+  
+  sendMc("b_lintopt_j4thtvx6_mc", { title: "分享按钮" })
+  log("share(): ", store)
+
   checkSharePermission().then((res) => {
-    log('checkSharePermission(): ', res)
-    // mock begin ===========>
-    if(window.searchObject.isGzzTest) {
+    log("checkSharePermission(): ", res)
+    if (window.searchObject.isGzzTest) {
       res.data = true
     }
-    // mock end ===========>
-    if (!res.data) return window.toast('暂无邀请权限')
-    const mpUrl = createMpUrl(store.mpPageQuery, {
-      isStartupPage: 1,
-      initWifi: 0,
-      listenLocation: 0,
-      wifiLoopInterval: '30000',
-    }, {
-      inviterUserId: store.personalInfo.userId,
-      inviterWXOpenId: store.personalInfo.wxOpenId
+    const origin = window.location.origin
+    const inviteInfoStr = "&inviterUserId=" + window.searchObject.userid + "&inviterUuid=" + window.searchObject.uuid
+    let url = origin + "/kk/fetools/pages/wifitaskv3?isH5Starter=1" + (window.searchObject.isGzzTest ? "" : inviteInfoStr)
+    console.log("url", url)
+    // url = "https://w.dianping.com/cube/evoke/meituan.html?url=" + encodeURIComponent(url)
+
+    // const origin = window.location.origin
+    // let url =
+    //   origin + "/kk/fetools/pages/wifitaskv3?isH5Starter=1&inviterUserId=" + window.searchObject.userid + "&inviterUuid=" + window.searchObject.uuid
+    // url = "https://w.dianping.com/cube/evoke/meituan.html?url=" + encodeURIComponent(url)
+    shareToWx({
+      title: "手慢无！参与门店淘金活动，立得50元现金",
+      desc: "快来点击链接参与活动吧",
+      image: "https://p0.meituan.net/undertake/6fd547cece0fb37c54fb5dc9b5ee3719322032.png",
+      url,
     })
-    log('share() -> mpUrl: ', mpUrl)
-    wx.miniProgram.navigateTo({ url: mpUrl })
-  }).catch((res) => {
-    console.log('res',res)
   })
 }
 const showRule = () => {
   sendMc("b_lintopt_j4thtvx6_mc", { title: "规则按钮" })
   showShareRule.value = true
+}
+
+const showRecord = () => {
+  showRecord.value = true
 }
 
 const onCloseShareModule = () => {
@@ -222,34 +213,12 @@ const onCloseShareModule = () => {
     width: 100%;
     height: 340px;
     margin-top: 17px;
-    background-image: url("https://p1.meituan.net/undertake/c0315c45c546a6697d2f8aa6f603a43656607.png");
+    background-image: url("https://p0.meituan.net/undertake/b9326b8a44f3c752bc238cf8bb6d46cd55925.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
   }
-  .invite-record{
-    position: absolute;
-    z-index: 999;
-    top: 127px;
-    right: 0;
-    width: 135px;
-    height: 62px;
-    background-image: url('https://p0.meituan.net/undertake/8318f49509563c2dd33ee60b63ce7023660.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    .txt{
-      color: #FFFFFF;
-    opacity: 0.8;
 
-    font-size: 24px;
-    line-height: 22px;
-    }
-  }
   .carousel {
     width: 100%;
     height: 60px;
@@ -358,6 +327,30 @@ const onCloseShareModule = () => {
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+  }
+
+  .invite-record{
+    position: absolute;
+    z-index: 999;
+    top: 127px;
+    right: 0;
+    width: 135px;
+    height: 62px;
+    background-image: url('https://p0.meituan.net/undertake/8318f49509563c2dd33ee60b63ce7023660.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    .txt{
+      color: #FFFFFF;
+    opacity: 0.8;
+
+    font-size: 24px;
+    line-height: 22px;
+    }
   }
 
   @keyframes infiniteScroll {

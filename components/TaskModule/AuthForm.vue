@@ -4,6 +4,9 @@
       <Carousel :pics />
     </div>
     <div class="content" @click.stop="() => { }">
+      <!-- <div class="merchant-poster" @click="onClickMerchantPoster">
+        <img src="https://p0.meituan.net/travelcube/f9b0ab0fd2671166370536b6ac11bd55588040.png" alt="商家海报" />
+      </div> -->
       <div class="title">
         <div class="left-button" @click.stop="closePage">取消</div>
         <div class="text">{{ props.authWifi.poiName }}</div>
@@ -13,7 +16,7 @@
       <div class="wifiname">{{ props.authWifi.wifiName }}</div>
       <div class="input-container">
         <input class="input-field" placeholder="请输入Wi-Fi密码" v-model="password" ref="inputField"
-          @blur.prevent="handleBlur" />
+          @blur.prevent="handleBlur" @keydown="captureEnter" />
         <img src="https://p0.meituan.net/undertake/b831c82b27d86fe00117bac8693446741105.png" alt="" class="clear-button"
           @click.self.stop="clearInput">
       </div>
@@ -22,16 +25,21 @@
       </div>
       <div class="footer-btns">
         <div class="btn left-btn" :class="{ disable }" @click.stop="openDirectReport">直接提报</div>
-        <!-- <div class="btn right-btn" :class="{ disable }" @click.stop="clickRightButton">验证并提报</div> -->
+        <div class="btn right-btn" :class="{ disable }" @click.stop="clickRightButton">验证并提报</div>
       </div>
     </div>
     <LoadingV2 v-if="loadingStatus" :loadingStatus />
+    <DeleteWifi v-if="showDeleteWifi" :ssid="props.authWifi.wifiName" @delete-wifi="onDeleteWifi"
+      @close="showDeleteWifi = false" />
+    <ImgPoster v-if="showMerchantPoster" :showCloseButton="true" :src="imgSrcMerchantPoster" btnText="关闭"
+      @close="showMerchantPoster = false" />
     <DirectReportTip v-if="showDirectReportTip" @close="showDirectReportTip = false" @confirm="directReport" />
   </div>
 </template>
 
 <script setup>
 import { computed, nextTick, ref } from 'vue';
+import DeleteWifi from './DeleteWifi.vue';
 import { connectWifi } from '../../utils/utils'
 import LoadingV2 from '@/components/LoadingV2.vue';
 import { TTEInstance } from '@ttejs/web';
@@ -39,9 +47,10 @@ import { reportTaskWifi } from '../../request'
 import { sendMv, sendMc } from '../../lxreport';
 import RealtimeReport from '../../utils/realtimeReport'
 import RadioButton from '../../../../components/RadioButton.vue';
+import ImgPoster from '../Common/ImgPoster.vue';
 import DirectReportTip from './DirectReportTip.vue';
 import Carousel from '@/components/Carousel.vue';
-import { store } from '../../store'
+import { store } from "../../store"
 
 const pics = [
   'https://p0.meituan.net/undertake/5480d05f8b3ed8c0eb2497f68c2c7128186576.png',
@@ -49,6 +58,7 @@ const pics = [
   'https://p0.meituan.net/undertake/f1a379bdab7c5594a5278f8b0b9057ac93319.png'
 ]
 const realtimeReport = new RealtimeReport()
+
 const tte = TTEInstance.create({
   biz: 'boss-wifi',
   algo: 'aes',
@@ -64,6 +74,9 @@ const loadingStatus = ref('')
 const disable = computed(() => password.value.length < 8 || password.value.length > 63 || !picked.value)
 const inputField = ref(null);
 const picked = ref(false)
+const showMerchantPoster = ref(false)
+const imgSrcMerchantPoster = ref('https://p0.meituan.net/travelcube/f9b0ab0fd2671166370536b6ac11bd55588040.png')
+const showDeleteWifi = ref(false)
 
 nextTick(() => { inputField.value.focus() })
 const clearInput = () => { password.value = '' }
@@ -74,19 +87,40 @@ const handleBlur = (e) => {
   // 防止input失焦
   e.target.focus()
 }
-const clickRightButton = () => {
+const captureEnter = (event) => {
+  if (event.key === "Enter") {
+    clickRightButton()
+  }
+}
+const onDeleteWifi = () => {
+  showDeleteWifi.value = false
+  clickRightButton()
+}
+const clickRightButton = async () => {
   if (disable.value) return
   sendMc('b_lintopt_6hepzdgd_mc', { task_id: props.authWifi.taskId })
   loadingStatus.value = 'loading'
-  connectWifi({
-    SSID: props.authWifi.wifiName,
-    password: password.value
-  }).then(() => {
-    handleSuccess()
-  }).catch((e) => {
-    realtimeReport.reportRealTime('connectWifi_error', {}, e)
-    handleError(-996)
-  })
+  try {
+    const result = await connectWifi({
+      ssid: props.authWifi.wifiName,
+      password: password.value
+    }); // 等待授权完成
+    console.log('验证回调', result)
+    if (result.code === 0) {
+      handleSuccess()
+    } else if (result.code === -2002 || result.code === -2013 || result.code === -2019) {
+      realtimeReport.reportRealTime('connectwifi_need_delete', {}, result)
+      setTimeout(() => {
+        nextTick(() => { showDeleteWifi.value = true })
+      }, 100)
+    } else {
+      realtimeReport.reportRealTime('connectWifi_error', {}, result)
+      handleError(result.code); // 处理错误情况
+    }
+  } catch (err) {
+    console.log('验证报错', err);
+    handleError(-999); // 捕获异常，处理错误
+  }
 }
 
 const retryReportWifi = async (params, retries = 1) => {
@@ -110,15 +144,14 @@ const handleSuccess = async (noVerify) => {
   const result = await tte.encrypt(password.value, 'string');
   if (!result.ok) { console.log('密码加密失败'); handleError(-998); return }
   const wifiPassword = result.value
-  console.log('密码加密成功');
-  const mac = store.scanWifiList.find(item => item.SSID === props.authWifi.wifiName)?.BSSID || ''
+  const mac = store.scanWifiList.find(item => item.ssid === props.authWifi.wifiName)?.bssid || ''
   retryReportWifi({
     taskId: props.authWifi.taskId,
     wifiDTO: {
       wifiName: props.authWifi.wifiName,
       wifiPassword,
       passUnverified: !!noVerify,
-      mac,
+      mac
     }
   })
 }
@@ -130,16 +163,28 @@ const handleError = (error_code) => {
   setTimeout(() => { loadingStatus.value = '' }, 2000)
 }
 
+const onClickMerchantPoster = () => {
+  showMerchantPoster.value = true
+  inputField.value.blur()
+}
+
 const showDirectReportTip = ref(false)
 const openDirectReport = () => {
   if (disable.value) return
-  handleSuccess(true)
-  // showDirectReportTip.value = true
+  showDirectReportTip.value = true
 }
 const directReport = () => {
   console.log('直接提报')
   handleSuccess(true)
 }
+
+KNBP.setLLButton({
+  handle: () => {
+    store.resetBack()
+    closePage()
+  }
+})
+
 </script>
 
 <style scoped lang="scss">
@@ -194,17 +239,28 @@ const directReport = () => {
   z-index: 1002;
   width: 100%;
   height: 100%;
-  // background: rgba(0, 0, 0, 0.4);
+  // background: rgba(0, 0, 0, 0.8);
   background: #fff;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
 }
 
+.merchant-poster {
+  max-height: 100px;
+  overflow: hidden;
+  border-bottom: 0.5px solid #E5E5E5;
+
+  img {
+    width: 100%;
+  }
+}
+
 .content {
   width: 100%;
   background: #fff;
   border-radius: 18px 18px 0 0;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
 }
 
 .title {

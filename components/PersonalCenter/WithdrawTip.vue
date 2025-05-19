@@ -9,7 +9,7 @@
       <div class="titlebar-right"></div>
     </div>
     <div class="content">
-      <div class="content-text">1.每个用户单日只有1次提现额度。单次提现额度不超过100元。</div>
+      <div class="content-text">1.每个用户单日只有1次提现额度。单次提现不超过100元，单日不超过500元。</div>
       <div class="content-text">2.每次提现时，您可以选择页面展示的某一种档位进行提现，剩余金额在下次满足提现门槛时申请提现。 </div>
       <div class="content-text">3.活动期间用户不得使用任何外挂、插件以及其他破坏活动规则、违背活动公平原则的方式参加本次活动。否则可能会导致无法提现。</div>
       <div class="content-text">4.提现通常在24小时内到账，但请您理解因为节假日、服务器波动等原因，提现时间可能会延长。</div>

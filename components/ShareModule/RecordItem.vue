@@ -30,7 +30,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { formatAmount, formatTimeHHMMSS } from '@/utils/transform'
+import { formatAmount, formatTimeHHMMSS, getDaysFromMilliseconds } from '@/utils/transform'
 import logger from '../../utils/logger'
 
 const log = logger('RecordItem')
@@ -65,6 +65,9 @@ const userAvatar = computed(() => {
 // 倒计时相关
 const remainingTime = ref(props.item.effectTime || 0)
 const countDownTime = computed(() => {
+  if (remainingTime.value > 2 * 24 * 60 * 60 * 1000) {
+    return getDaysFromMilliseconds(remainingTime.value) + '天'
+  }
   return formatTimeHHMMSS(remainingTime.value)
 })
 

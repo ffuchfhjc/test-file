@@ -40,7 +40,7 @@ export default function createMpUrl(
   ).toString()}`;
   newMpPageQuery["url"] = encodeURIComponent(newWebUrl);
   const url =
-    "/anxinlian-task/pages/webview/index?" +
+    "imeituan://www.meituan.com/web?url=" +
     Object.entries(newMpPageQuery)
       .map(([key, value]) => `${key}=${value}`)
       .join("&");

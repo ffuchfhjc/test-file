@@ -82,37 +82,59 @@ const props = defineProps({
 })
 
 const isGreetPage = ref(props.source === "greet")
+// console.log("props.source:", props.source)
+// console.log("isGreetPage:", isGreetPage.value)
 const avatarUrl = "https://p0.meituan.net/undertake/0b648ae615e5891e84cbc4a5a3b663501094.png"
 const carouselMockData = [
-  {
+{
     userId: "001",
     avatar: avatarUrl,
-    txt: "尾号6785用户，今日提现150元",
+    txt: "尾号 3721 用户，累计已提现 200元",
   },
   {
     userId: "002",
     avatar: avatarUrl,
-    txt: "尾号2341用户，今日提现50元",
+    txt: "尾号 5896 用户，累计已提现 200元",
   },
   {
     userId: "003",
     avatar: avatarUrl,
-    txt: "尾号8729用户，今日提现200元",
+    txt: "尾号 9043 用户，累计已提现 200元",
   },
   {
     userId: "004",
     avatar: avatarUrl,
-    txt: "尾号1057用户，今日提现100元",
+    txt: "尾号 2167 用户，累计已提现 50元",
   },
   {
     userId: "005",
     avatar: avatarUrl,
-    txt: "尾号3946用户，今日提现50元",
+    txt: "尾号 7438 用户，累计已提现 200元",
   },
   {
     userId: "006",
     avatar: avatarUrl,
-    txt: "尾号8123用户，今日提现200元",
+    txt: "尾号 4652 用户，累计已提现 200元",
+  },
+  {
+    userId: "007",
+    avatar: avatarUrl,
+    txt: "尾号 1289 用户，累计已提现 200元",
+  },
+  {
+    userId: "008",
+    avatar: avatarUrl,
+    txt: "尾号 6305 用户，累计已提现 50元",
+  },
+  {
+    userId: "009",
+    avatar: avatarUrl,
+    txt: "尾号 3571 用户，累计已提现 200元",
+  },
+  {
+    userId: "010",
+    avatar: avatarUrl,
+    txt: "尾号 8924 用户，累计已提现 50元",
   },
 ]
 </script>
@@ -121,7 +143,7 @@ const carouselMockData = [
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 2002;
+  z-index: 10000;
   width: 100%;
   height: 100%;
   background: linear-gradient(180deg, #a5e4fa 0%, #f7fab6 50%, #fcf6e4 100%);

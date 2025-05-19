@@ -1,124 +1,106 @@
 <template>
-  <div class="page">
+  <H5Starter :source="'share'" v-if="isH5Starter" @closeGreetingPage="onCloseGreetingPageWhenShare" />
+  <div v-else-if="showMainPage" class="page">
     <div class="loading-wrap" v-if="showLoading">
       <Loading />
     </div>
-    <SharePage v-if="pageTypeFromStore === 'sharePage'"></SharePage>
-    <template v-if="pageTypeFromStore === 'mainPage'">
-      <div class="content">
-        <template v-if="showActivityRule">
-          <ActivityRule v-if="false" @close="showActivityRule = false" showMode="bottomReturn" />
-          <!-- source 分为分享页和欢迎页面 -->
-          <GreetingPage v-else :source="'greet'" @close="showActivityRule = false" @miniProgramJoin="" @appJoin="" />
-        </template>
-        <TaskModule v-if="pageStatus === 'TaskModule'" @init-complete="showLoading = false" />
-        <ShareModule v-if="pageStatus === 'ShareModule'" @init-complete="showLoading = false" />
-        <PersonalCenter v-if="pageStatus === 'PersonalCenter'" />
-      </div>
-      <BottomNavs v-show="store.showBottomNavs" />
-    </template>
+    <!-- <template> -->
+
+    <div class="content">
+      <!-- 
+      
+      逻辑是这样，判断来源，如果是新用户，则展示落地页海报，如果是通过邀请海报来的，展示规则内容-->
+      <template v-if="showActivityRule">
+        <ActivityRule v-if="false" @close="showActivityRule = false" showMode="bottomReturn" />
+        <!-- source 分为分享页和欢迎页面 -->
+        <!-- <GreetingPage v-else :source="'share'" @close="showActivityRule = false" @miniProgramJoin="" @appJoin="" /> -->
+      </template>
+
+      <TaskModule v-if="pageStatus === 'TaskModule'" @init-complete="showLoading = false" />
+      <ShareModule v-if="pageStatus === 'ShareModule'" @init-complete="showLoading = false" />
+      <PersonalCenter v-if="pageStatus === 'PersonalCenter'" />
+    </div>
+    <BottomNavs v-show="store.showBottomNavs" />
+    <!-- </template> -->
   </div>
+  <GreetingPage v-if="showGreetingPage && !showMainPage" :source="'greet'" @close="onCloseGreetingPageWhenGreet" />
+  <ConfirmLeave v-if="store.showConfirmLeave" @leave="onLeave" @close="store.showConfirmLeave = false" />
+  <ImgPoster
+    v-show="store.showNewLearnImgPoster"
+    :show-close="true"
+    :btn-text="'开始做任务'"
+    :src="'https://p0.meituan.net/undertake/809a58d2df4e4bc1c81c425a886f66be1535871.jpg'"
+    @close="onCloseNewLearnImgPoster"
+  />
 </template>
 
 <script setup>
+console.log("0")
 import { ref, computed } from "vue"
 import Loading from "@/components/Loading.vue"
 import TaskModule from "./components/TaskModule/index.vue"
 import PersonalCenter from "./components/PersonalCenter/index.vue"
-import SharePage from "./page-share/index.vue"
 import BottomNavs from "./components/BottomNavs.vue"
 import ShareModule from "./components/ShareModule/index.vue"
+import H5Starter from "./components/Starter/H5Starter.vue"
 import { store } from "./store"
 import { getLocation, getPageInfo, login } from "./utils/utils"
 import { bindShareInfo } from "./request"
 import createMpUrl from "./utils/mpUrlCreator"
-import logger from "./utils/logger"
+import logger from "./utils/logger.js"
+import { checkIsAndroid } from "./utils/index"
+import RealtimeReport from "./utils/realtimeReport"
+import ConfirmLeave from "./components/ConfirmLeave.vue"
 import ActivityRule from "./components/ActivityRule.vue"
 import GreetingPage from "./components/GreetingPage.vue"
-import { WIFITASKV3_STARTER_MP_WEB_PARAMS_KEY } from "@/utils/consts"
-import checkWhiteList from "./utils/whiteList"
-import VConsole from "vconsole"
+import ImgPoster from "./components/Common/ImgPoster.vue"
+import checkArriveMaxTimes from "./utils/checkArriveMaxTimes"
+
+const realtimeReport = new RealtimeReport()
 
 const log = logger("App")
+log("page url:", window.location.href)
+log("web queries:", window.searchObject)
 
 const tracker = window.LXAnalytics("getTracker")
 window.pageCase = tracker("pageView", {}, {}, "c_lintopt_jpnzfkyp")
 
 const pageStatus = computed(() => store.pageStatus)
-const pageTypeFromStore = computed(() => store.pageType)
-const showLoading = ref(true)
+
 const hasShowActivityRule = localStorage.getItem("ActivityRule") || false
 const showActivityRule = ref(true)
 
-/**
- * 判断是否是启动页，如果是启动页，判断是否为ios，然后跳转到目标页
- */
-const checkIsStartupPage = async function () {
-  // return false;
+const showLoading = ref(true)
+const isH5Starter = ref(window.searchObject.isH5Starter === "1")
+const showGreetingPage = ref(!checkArriveMaxTimes("__kk_taskwifi_v3_show_new_greeting_page__", 3) && !isH5Starter.value)
+store.showNewLearnImgPoster = !checkArriveMaxTimes("__kk_taskwifi_v3_show_new_learn_img_poster__", 3)
+// const showMainPage = ref(!showLoading && !isH5Starter.value && !showGreetingPage.value && !store.showNewLearnImgPoster)
+const showMainPage = computed(() => !isH5Starter.value && !showGreetingPage.value && !store.showNewLearnImgPoster)
 
-  const { isStartupPage } = window.searchObject
-  const flagIsStartupPage = isStartupPage === "1"
-  console.log('deviceInfo',{ isStartupPage, flagIsStartupPage })
-  if (flagIsStartupPage) {
-    const pageInfo = await getPageInfo()
-    const { pageQuery: mpPageQuery } = pageInfo
-    let isIOS = /iPad|iPhone|iPod/.test(window.navigator.userAgent)
-    // if(window.searchObject.isGzzTest) {
-    //   isIOS = true
-    // }
-    if (isIOS) {
-      alert("苹果设备暂不支持")
-    } else {
-      // anxinlian-task/pages/webview/index?delayClosePageTime=100&initWifi=1&loopWifi=1&wifiLoopInterval=60000&listenLocation=1&isHighAccuracy=1&locationLoopInterval=60000&shareTitle=分享标题&shareUrl=https%3A%2F%2Fp1.meituan.net%2Ftravelcube%2F00522bf51ed1cc3f88265f937f9f45db1628097.png&url=https%3A%2F%2F44204-wtoqu-sl-kk.wpt.test.sankuai.com%2Fkk%2Ffetools%2Fpages%2Fwifitaskv2
-      const mpUrl = createMpUrl(
-        mpPageQuery, // 小程序页面参数
-        {
-          delayClosePageTime: "100",
-          initWifi: "1",
-          loopWifi: "1",
-          wifiLoopInterval: "35000",
-          listenLocation: "1",
-          isHighAccuracy: "1",
-          locationLoopInterval: "60000",
-          shareTitle: "手慢无！参与门店淘金活动，立得50元现金",
-          shareUrl: encodeURIComponent("https://p0.meituan.net/undertake/6fd547cece0fb37c54fb5dc9b5ee3719322032.png"),
-        }, // 小程序页面参数需要添加的参数
-        {}, // web页面参数需要添加的参数
-        ["isStartupPage"], // 小程序页面参数需要删除的参数
-        ["isStartupPage"] // web页面参数需要删除的参数
-      )
-      log("checkIsStartupPage", {
-        mpUrl,
-        mpPageQuery,
-        isStartupPage,
-        isIOS,
-        userAgent: window.navigator.userAgent,
-        pageInfo,
-      })
-      console.info("111")
-      // wx.ready(function(){
-      // 延迟2秒，token获取成功后，再跳转
-      wx.miniProgram.reLaunch({ url: mpUrl })
-      // });
-    }
-  }
-  return flagIsStartupPage
-}
+console.log("isH5Starter:", isH5Starter.value)
+console.log("showMainPage:", showMainPage.value)
+console.log("showGreetingPage:", showGreetingPage.value)
+console.log("store.showNewLearnImgPoster:", store.showNewLearnImgPoster)
 
-const init = async function () {
-  // store.setPageType('sharePage')
+const initMainPage = async function () {
+  console.log("2---222")
+  log("2")
   // showLoading.value = false
   // return;
   // 判断是否是启动页
-  const isStartupPage = await checkIsStartupPage()
-  if (isStartupPage) {
+  const isAndroid = await checkIsAndroid()
+  log("3", { isAndroid })
+  if (!isAndroid) {
+    alert("暂不支持该设备")
     return
   }
   // 获取位置信息和页面信息
   const [location, pageInfo] = await Promise.all([
     getLocation().then((location) => {
       log("location", location)
-      store.setLocation(location)
+      if (location.lat && location.lng) {
+        store.setLocation(location)
+      }
       return location
     }),
     // 由于 getLocation 获取速度比较慢，getPageInfo 获取速度较快；所以部分逻辑单独放这里处理
@@ -129,93 +111,74 @@ const init = async function () {
         log("need login")
         login().then(() => {
           log("login success")
-          const { pageQuery } = pageInfo
-          const mpUrl = createMpUrl(pageQuery)
-          // wx.ready(function(){
-          setTimeout(() => {
-            wx.miniProgram.reLaunch({ url: mpUrl })
-          }, 2000)
-          // });
+          KNBP.jumpPage({
+            url:
+              window.location.href.split("?")[0] + (window.searchObject.inviterUserId ? "?inviterUserId=" + window.searchObject.inviterUserId : ""),
+          })
         })
         throw new Error("need login")
       }
-
-      const inWhiteList = checkWhiteList(pageInfo?.authInfo?.userId)
-      console.log("inWhiteList", inWhiteList)
-
-      if (inWhiteList) {
-        const vConsole = new VConsole()
-        // vConsole.show()
-      }
-      log("page url-------:", window.location.href.split("#")[0])
-
       return pageInfo
     }),
   ])
 
   log("Promise.all", location, pageInfo)
 
-  // 判断是否是分享页，当 "存在inviterUserId" 且 "inviterUserId和当前用户id一致" 时，是分享页
-  let { inviterUserId, inviterWXOpenId, inviterUuid } = window.searchObject
-
-  const pageType =
-    // 判断页面类型
-    inviterUserId && inviterUserId === pageInfo?.authInfo?.userId?.toString() ? "sharePage" : "mainPage"
-  log({ inviterUserId, inviterWXOpenId, inviterUuid, pageInfo, userId: pageInfo?.authInfo?.userId })
-
   // 初始化个人信息 & 位置信息
-  store.initPersonalInfo(pageInfo.authInfo || {})
+  await store.initPersonalInfo(pageInfo.authInfo || {})
   pageInfo.authInfo.userId && tracker("set", "uid", pageInfo.authInfo.userId)
-  log("pageInfo, location, pageType: ", pageInfo, location, pageType)
-  const { latitude: lat, longitude: lng } = location
-  store.setLocation({ lat, lng })
+  log("pageInfo, location: ", pageInfo, location)
   store.setMpPageQuery(pageInfo.pageQuery)
 
   log("store-1", store)
 
-  // 如果是分享页，引导提示去分享
-  if (pageType === "sharePage") {
-    store.setPageType(pageType)
-    showLoading.value = false // 如果是分享页，直接设置loading为false
-    log("store-2", store)
+  const inviterUserId = window.searchObject.inviterUserId
+  const inviterUuid = window.searchObject.inviterUuid
 
-    // 如果是新用户打开页面，调用绑定方法，传入邀请者的参数，设置pagestatus=taskmodule
-  } else {
-    if (inviterUserId) {
-      const bindShareInfoRes = await bindShareInfo({
-        // mock begin ===========>
-        // inviterUserId: '1234567890',
-        inviterUserId,
-        // mock end ===========>
-        ...(inviterWXOpenId ? { inviterWXOpenId } : {}),
-        ...(inviterUuid ? { inviterUuid } : {}),
-      }).catch((err) => {
-        console.error("绑定邀请关系失败", err)
-        if (window.searchObject.isTest) {
-          window.toast("绑定邀请关系失败")
-        }
-      })
-      log("bindShareInfoRes", bindShareInfoRes)
-      // 绑定成功
+  if (inviterUserId) {
+    const bindShareInfoRes = await bindShareInfo({
       // mock begin ===========>
-      // bindShareInfoRes.data = true
+      // inviterUserId: '1234567890',
+      inviterUserId,
+      inviterUuid,
       // mock end ===========>
-      if (bindShareInfoRes && bindShareInfoRes?.data) {
-        // store.setPageType(pageType)
-        showLoading.value = false // 如果是分享页，直接设置loading为false
-      } else {
-        console.error("绑定邀请关系失败")
-        if (window.searchObject.isTest) {
-          window.toast("绑定邀请关系失败")
-        }
+      // inviterWXOpenId: window.searchObject.inviterWXOpenId,
+    }).catch((err) => {
+      console.error("绑定邀请关系失败", err)
+      if (window.searchObject.isTest) {
+        window.toast("绑定邀请关系失败")
       }
-      // TODO：无论绑定成功还是失败，应该都能继续。这里需要上报日志。
+    })
+    realtimeReport.reportRealTime(
+      "bindShareInfo",
+      {},
+      {
+        inviterUserId,
+        inviterUuid,
+        userid: store.personalInfo.userId,
+        bindShareInfoRes,
+      }
+    )
+    log("bindShareInfoRes", bindShareInfoRes)
+    // 绑定成功
+    // mock begin ===========>
+    // bindShareInfoRes.data = true
+    // mock end ===========>
+    if (bindShareInfoRes?.data) {
+      showLoading.value = false // 如果是分享页，直接设置loading为false
+    } else {
+      console.error("绑定邀请关系失败")
+      if (window.searchObject.isTest) {
+        window.toast("绑定邀请关系失败")
+      }
     }
-    store.setPageType(pageType)
-    store.getWalletStatisticsFun()
-    store.setPageStatus("TaskModule")
+    // TODO：无论绑定成功还是失败，应该都能继续。这里需要上报日志。
   }
-  log("store-3", store)
+
+  showLoading.value = false
+  store.setPageStatus("TaskModule")
+  store.getWalletStatisticsFun()
+  log("store-4", store)
 
   // 在这个地方判断，是新用户打开页面，还是用户打开了分享页
   // 如果是新用户打开页面，调用绑定方法，传入邀请者的参数，设置pagestatus=taskmodule
@@ -227,9 +190,43 @@ const init = async function () {
   // store.setPageStatus('ShareModule')
   // store.setPageStatus('TaskModule')
 }
-init()
+
+initMainPage()
+if (!window.searchObject.isH5Starter) {
+  console.log("xxxx1-window.searchObject.isH5Starter", window.searchObject.isH5Starter)
+  // showMainPage.value = true
+  // initMainPage()
+}
+
+const onCloseGreetingPageWhenShare = () => {
+  console.log("xxxx2")
+  // showMainPage.value = true
+
+  initMainPage()
+}
+
+const onCloseGreetingPageWhenGreet = () => {
+  showGreetingPage.value = false
+  // showMainPage.value = true
+  initMainPage()
+}
+
+KNBP.setLLButton({
+  handle: () => (store.showConfirmLeave = true),
+})
+const onLeave = () => {
+  log("onLeave")
+  KNBP.closePage()
+}
+
+const onCloseNewLearnImgPoster = () => {
+  store.showNewLearnImgPoster = false
+  log("onCloseNewLearnImgPoster", store.showNewLearnImgPoster)
+}
+
 // mock code -----------------------
 // store.setLocation()
+// store.getWalletStatisticsFun()
 // store.setPageStatus('TaskModule')
 </script>
 

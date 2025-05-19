@@ -2,7 +2,7 @@ export default class RealtimeReport {
   commonParams;
   constructor(commonParams = {}) {
     this.commonParams = commonParams || {};
-    this.commonParams.userId = this.commonParams.userId || window.__kk_wifi_task_v2_pageInfo?.authInfo?.userId || '';
+    this.commonParams.userId = this.commonParams.userId || window.searchObject.userid || '';
     this.commonParams.qaExtraInfo = this.commonParams.qaExtraInfo || {};
   }
   getParams(custom, qaExtraInfo = {}) {
@@ -11,7 +11,6 @@ export default class RealtimeReport {
       ...this.commonParams,
       ...custom,
       qaExtraInfo: { 
-        pageInfo: window.__kk_wifi_task_v2_pageInfo,
         ...this.commonParams.qaExtraInfo, 
         ...qaExtraInfo,
       },
@@ -44,7 +43,7 @@ export default class RealtimeReport {
         {
           channel: "H5_Report",
           source: "H5_Report",
-          modelName: "H5_WIFI_TASK_V2",
+          modelName: "H5_WIFI_TASK_V3",
           eventType: eventType,
           eventTime: Date.now(),
           custom: params,

@@ -2,7 +2,7 @@
   <div class="bundle-container">
     <div class="header">
       <div class="distance-tip"><span v-show="!showMap">附近 3km</span></div>
-      <ModeSwitch v-model="showMap" />
+      <ModeSwitch v-model="modeSwitchModel" />
     </div>
 
     <div v-show="!showMap" class="list-view">
@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, computed } from 'vue'
 import { store } from '../../store'
 import ModeSwitch from './ModeSwitch.vue'
 import TaskBundleItem from './TaskBundleItem.vue'
@@ -37,13 +37,17 @@ sendMv('b_lintopt_ims73ui7_mv', { page_type: 'list' })
 const props = defineProps(['bundles', 'showkey'])
 const emit = defineEmits(['choose-bundle', 'refresh'])
 
-const showMap = ref(false)
+const showMap = computed(() => store.showMap)
 const pullRefreshLoading = ref(false)
 const selectedBundle = ref(null)
+const modeSwitchModel = ref(showMap.value)
 
 const mapBundles = ref(props.bundles)
 
 watch(() => props.showkey, () => pullRefreshLoading.value = false)
+watch(modeSwitchModel, (newVal) => {
+  store.showMap = newVal
+})
 
 watch(showMap, (newVal) => {
   sendMv('b_lintopt_ims73ui7_mv', { page_type: newVal ? 'map' : 'list' })
